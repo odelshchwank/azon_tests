@@ -26,7 +26,12 @@ class CustomRequester:
         response = self.session.request(method, url, **kwargs)
         self._log_request_and_response(response)
 
-        if response.status_code != expected_status:
+        if isinstance(expected_status, int):
+            allowed = {expected_status}
+        else:
+            allowed = set(expected_status)
+
+        if response.status_code not in allowed:
             raise AssertionError(
                 f"{method} {url}: ожидали статус {expected_status}, "
                 f"получили {response.status_code}. Тело ответа: {response.text}"
@@ -54,4 +59,4 @@ class CustomRequester:
         body_dict = json.loads(body)
         if "password" in body_dict:
             body_dict["password"] = "***"
-        return json.dumps(body_dict, ensure_ascii=False)
+        return json.dumps(body_dict)
