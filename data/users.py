@@ -4,12 +4,15 @@ from utils.data_generator import DataGenerator
 class UserData:
 
     @staticmethod
-    def registration_data() -> dict:
-        return {
+    def registration_data(invite_code: str | None = None) -> dict:
+        data = {
             "email": DataGenerator.generate_email(),
             "password": DataGenerator.generate_password(),
             "full_name": DataGenerator.generate_full_name(),
         }
+        if invite_code:
+            data["invite_code"] = invite_code
+        return data
 
     @staticmethod
     def login_data(user_data) -> dict:
