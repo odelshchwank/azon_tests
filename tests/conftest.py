@@ -45,7 +45,6 @@ def admin_manager():
     admin_credentials = UserData.registration_data(ADMIN_INVITE_CODE)
     manager.auth_api.register_user(admin_credentials)
     manager.auth_api.authenticate((admin_credentials["email"], admin_credentials["password"]))
-    print("TOKEN:", admin_session.headers.get("Authorization"))   # временно
     yield manager
     admin_session.close()
 
