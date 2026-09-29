@@ -2,7 +2,6 @@ import json
 import logging
 from typing import Any
 
-import pytest
 
 DEFAULT_TIMEOUT = 10
 

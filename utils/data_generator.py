@@ -44,7 +44,3 @@ class DataGenerator:
     @staticmethod
     def generate_sku():
         return uuid.uuid4().hex
-
-    @staticmethod
-    def nonexistent_category_id() -> str:
-        return str(uuid.uuid4())
