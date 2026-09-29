@@ -39,6 +39,17 @@ def authenticated_manager(api_manager):
     return _register_and_authenticate(api_manager, MANAGER_INVITE_CODE)
 
 @pytest.fixture
+def admin_manager():
+    admin_session = requests.Session()
+    manager = ApiManager(admin_session)
+    admin_credentials = UserData.registration_data(ADMIN_INVITE_CODE)
+    manager.auth_api.register_user(admin_credentials)
+    manager.auth_api.authenticate((admin_credentials["email"], admin_credentials["password"]))
+    print("TOKEN:", admin_session.headers.get("Authorization"))   # временно
+    yield manager
+    admin_session.close()
+
+@pytest.fixture
 def authenticated_admin(api_manager):
     return _register_and_authenticate(api_manager, ADMIN_INVITE_CODE)
 
@@ -49,8 +60,8 @@ def category_id(api_manager):
     return categories[0]["id"]
 
 @pytest.fixture
-def created_product(api_manager, category_id):
+def created_product(admin_manager, category_id):
     payload = ProductData.create_product_data(category_id)
-    product = api_manager.products_api.create_product(payload).json()
+    product = admin_manager.products_api.create_product(payload).json()
     yield {"id": product["id"], "payload": payload, "response_body": product}
-    api_manager.products_api.delete_product(product["id"], expected_status=[204, 404])
+    admin_manager.products_api.delete_product(product["id"], expected_status=[204, 404])
