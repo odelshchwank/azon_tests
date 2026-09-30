@@ -168,6 +168,20 @@ class TestProducts:
         ).json()
         assert response["error"]["code"] == "FORBIDDEN"
 
+    def test_update_product_with_price_returns_422(
+            self, api_manager, authenticated_admin, created_product
+    ):
+        payload = ProductData.update_product_data(price=100)
+        details = api_manager.products_api.update_product(
+            created_product["id"], payload, expected_status=422
+        ).json()["detail"]
+
+        assert any(
+            detail["type"] == "extra_forbidden" and "price" in detail["loc"]
+            for detail in details
+        )
+
+
     def test_delete_seed_product_forbidden(
         self, api_manager, authenticated_admin
     ):
