@@ -12,12 +12,18 @@ class AuthAPI(CustomRequester):
 
     def register_user(self, user_data, expected_status=201):
         return self.send_request(
-            "POST", self.REGISTER_ENDPOINT, json=user_data, expected_status=expected_status
+            "POST",
+            self.REGISTER_ENDPOINT,
+            json=user_data,
+            expected_status=expected_status,
         )
 
     def login_user(self, credentials, expected_status=200):
         return self.send_request(
-            "POST", self.LOGIN_ENDPOINT, json=credentials, expected_status=expected_status
+            "POST",
+            self.LOGIN_ENDPOINT,
+            json=credentials,
+            expected_status=expected_status,
         )
 
     def authenticate(self, user_creds):
