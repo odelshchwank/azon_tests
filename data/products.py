@@ -26,7 +26,6 @@ class ProductData:
     def price_data(price=None) -> dict:
         return {"price": price if price is not None else DataGenerator.generate_price()}
 
-
     @staticmethod
     def nonexistent_category_id() -> str:
         return str(uuid.uuid4())
