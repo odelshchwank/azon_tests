@@ -24,4 +24,7 @@ class UserData:
 
     @staticmethod
     def change_password_data(user_data, new_password) -> dict:
-        return {"old_password": user_data["password"], "new_password": new_password}
+        return {
+            "old_password": user_data["password"],
+            "new_password": new_password,
+        }

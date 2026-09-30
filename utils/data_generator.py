@@ -4,6 +4,7 @@ from faker import Faker
 
 fake = Faker("en_US")
 
+
 class DataGenerator:
 
     @staticmethod
@@ -26,7 +27,6 @@ class DataGenerator:
     def generate_description():
         return fake.sentence(nb_words=10)
 
-    # Для фильтрации
     @staticmethod
     def generate_price_range(min_gap: int = 1_000):
         low = fake.random_int(min=1_000, max=100_000)

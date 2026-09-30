@@ -4,10 +4,18 @@ from typing import Any
 
 
 DEFAULT_TIMEOUT = 10
-SECRET_FIELDS = ("password", "new_password", "old_password", "invite_code",
-                 "access_token", "refresh_token", "token")
+SECRET_FIELDS = (
+    "password",
+    "new_password",
+    "old_password",
+    "invite_code",
+    "access_token",
+    "refresh_token",
+    "token",
+)
 
 logger = logging.getLogger("azon_tests")
+
 
 class CustomRequester:
 
@@ -46,7 +54,9 @@ class CustomRequester:
         request = response.request
         logger.info("--> %s %s", request.method, request.url)
         if request.body:
-            logger.info("   тело запроса: %s", self._mask_secrets(request.body))
+            logger.info(
+                "   тело запроса: %s", self._mask_secrets(request.body)
+            )
         logger.info(
             "<-- %s за %.2f с: %s",
             response.status_code,
@@ -56,8 +66,11 @@ class CustomRequester:
 
     @staticmethod
     def _mask_secrets(body: Any):
+        if not body:
+            return body
         body_dict = json.loads(body)
         for field in SECRET_FIELDS:
             if field in body_dict:
                 body_dict[field] = "***"
+
         return json.dumps(body_dict, ensure_ascii=False)

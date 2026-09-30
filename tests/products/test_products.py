@@ -4,9 +4,12 @@ from decimal import Decimal
 import pytest
 
 from data.products import ProductData
+from utils.data_generator import DataGenerator
 
 
 class TestProducts:
+
+    # Позитивные тесты
 
     def test_products_price_filter_return_items_above_min(self, api_manager):
         response = api_manager.products_api.get_products(
@@ -26,10 +29,6 @@ class TestProducts:
 
         assert response.json()["id"] == product_id
 
-    def test_get_nonexistent_product(self, api_manager):
-        response = api_manager.products_api.get_product(uuid.uuid4(), expected_status=404)
-        assert response.json()["error"]["code"] == "PRODUCT_NOT_FOUND"
-
     def test_create_product_positive(self, authenticated_admin, created_product):
         payload = created_product["payload"]
         product = created_product["response_body"]
@@ -41,16 +40,18 @@ class TestProducts:
         assert product["is_seed"] is False
         assert product["is_available"] is True
 
-    # Отдельный тест для проверки структуры - не уверен нужен тут или нет(
     def test_get_products_default_pagination(self, api_manager):
         data = api_manager.products_api.get_products().json()
         assert set(data.keys()) >= {"items", "total", "page", "size", "pages"}
         assert data["page"] == 1
         assert data["size"] == 20
         assert len(data["items"]) <= 20
-        assert data["pages"] == (data["total"] + data["size"] - 1) // data["size"]
+        expected_pages = (data["total"] + data["size"] - 1) // data["size"]
+        assert data["pages"] == expected_pages
 
-    def test_update_product_positive(self, api_manager, authenticated_admin, created_product):
+    def test_update_product_positive(
+        self, api_manager, authenticated_admin, created_product
+    ):
         new_payload = ProductData.update_product_data(name="Мистер Саничка")
         updated = api_manager.products_api.update_product(
             created_product["id"], new_payload
@@ -58,9 +59,12 @@ class TestProducts:
 
         assert updated["name"] == new_payload["name"]
         assert updated["stock"] == created_product["response_body"]["stock"]
-        assert Decimal(updated["price"]) == Decimal(created_product["response_body"]["price"])
+        expected_price = created_product["response_body"]["price"]
+        assert Decimal(updated["price"]) == Decimal(expected_price)
 
-    def test_update_price_positive(self, api_manager, authenticated_admin, created_product):
+    def test_update_price_positive(
+        self, api_manager, authenticated_admin, created_product
+    ):
         new_price = 12345.67
         updated = api_manager.products_api.update_price(
             created_product["id"], ProductData.price_data(new_price)
@@ -68,15 +72,18 @@ class TestProducts:
 
         assert Decimal(updated["price"]) == Decimal(str(new_price))
 
-    def test_delete_product_positive(self, api_manager, authenticated_admin, created_product):
+    def test_delete_product_positive(
+        self, api_manager, authenticated_admin, created_product
+    ):
         api_manager.products_api.delete_product(created_product["id"])
         api_manager.products_api.delete_product(
             created_product["id"], expected_status=404
         )
 
-    # Баловство с параметризацией
     @pytest.mark.parametrize("new_price", [0.01, 1, 999_999.99])
-    def test_update_price_boundaries(self, api_manager, authenticated_admin, created_product, new_price):
+    def test_update_price_boundaries(
+        self, api_manager, authenticated_admin, created_product, new_price
+    ):
         updated = api_manager.products_api.update_price(
             created_product["id"], ProductData.price_data(new_price)
         ).json()
@@ -84,7 +91,144 @@ class TestProducts:
 
     @pytest.mark.parametrize("page,size", [(1, 5), (1, 10), (2, 5)])
     def test_pagination(self, api_manager, page, size):
-        data = api_manager.products_api.get_products(params={"page": page, "size": size}).json()
+        data = api_manager.products_api.get_products(
+            params={"page": page, "size": size}
+        ).json()
         assert data["page"] == page
         assert data["size"] == size
         assert len(data["items"]) <= size
+
+    # Негативные тесты
+
+    def test_create_product_without_token(self, api_manager, category_id):
+        payload = ProductData.create_product_data(category_id)
+        response = api_manager.products_api.create_product(
+            payload, expected_status=401
+        ).json()
+        assert response["error"]["code"] == "TOKEN_MISSING"
+
+    def test_create_product_forbidden_for_user(
+        self, api_manager, authenticated_user, category_id
+    ):
+        payload = ProductData.create_product_data(category_id)
+        response = api_manager.products_api.create_product(
+            payload, expected_status=403
+        ).json()
+        assert response["error"]["code"] == "FORBIDDEN"
+
+    def test_create_product_duplicates_sku(
+        self, api_manager, authenticated_manager, created_product, category_id
+    ):
+        payload = ProductData.create_product_data(
+            category_id, sku=created_product["payload"]["sku"]
+        )
+        response = api_manager.products_api.create_product(
+            payload, expected_status=409
+        ).json()
+        assert response["error"]["code"] == "SKU_EXISTS"
+
+    def test_create_product_nonexistent_category(
+        self, api_manager, authenticated_manager
+    ):
+        payload = ProductData.create_product_data(str(uuid.uuid4()))
+        response = api_manager.products_api.create_product(
+            payload, expected_status=404
+        ).json()
+        assert response["error"]["code"] == "CATEGORY_NOT_FOUND"
+
+    def test_get_nonexistent_product(self, api_manager):
+        response = api_manager.products_api.get_product(
+            uuid.uuid4(), expected_status=404
+        )
+        assert response.json()["error"]["code"] == "PRODUCT_NOT_FOUND"
+
+    def test_include_inactive_without_token(self, api_manager):
+        response = api_manager.products_api.get_products(
+            params={"include_inactive": True},
+            expected_status=401,
+        ).json()
+        assert response["error"]["code"] == "TOKEN_MISSING"
+
+    def test_include_inactive_forbidden_for_user(
+        self, api_manager, authenticated_user
+    ):
+        response = api_manager.products_api.get_products(
+            params={"include_inactive": True},
+            expected_status=403,
+        ).json()
+        assert response["error"]["code"] == "FORBIDDEN"
+
+    def test_update_price_forbidden_for_manager(
+        self, api_manager, authenticated_manager, created_product
+    ):
+        response = api_manager.products_api.update_price(
+            created_product["id"],
+            ProductData.price_data(),
+            expected_status=403,
+        ).json()
+        assert response["error"]["code"] == "FORBIDDEN"
+
+    def test_delete_seed_product_forbidden(
+        self, api_manager, authenticated_admin
+    ):
+        response = api_manager.products_api.get_products(
+            params={
+                "size": 100,
+                "include_inactive": True,
+                "sort_by": "created_at",
+                "order": "asc",
+            }
+        )
+        items = response.json()["items"]
+        seed = next((item for item in items if item["is_seed"]), None)
+        assert seed is not None, "На стенде нет seed-товаров"
+
+        response = api_manager.products_api.delete_product(
+            seed["id"], expected_status=403
+        ).json()
+        assert response["error"]["code"] == "SEED_PROTECTED"
+
+    # Тесты на фильтры
+
+    def test_filter_search(self, api_manager, admin_manager, category_id):
+        unique_name = DataGenerator.generate_product_name()
+        payload = ProductData.create_product_data(category_id, name=unique_name)
+        created = admin_manager.products_api.create_product(payload).json()
+
+        try:
+            response = api_manager.products_api.get_products(
+                params={"search": unique_name}
+            )
+            items = response.json()["items"]
+
+            assert all(unique_name.lower() in item["name"].lower() for item in items)
+            assert any(item["id"] == created["id"] for item in items)
+        finally:
+            admin_manager.products_api.delete_product(
+                created["id"], expected_status=[204, 404]
+            )
+
+    def test_filter_category_id(self, api_manager, category_id):
+        response = api_manager.products_api.get_products(
+            params={"category_id": category_id}
+        )
+        items = response.json()["items"]
+        assert all(item["category_id"] == category_id for item in items)
+
+    def test_filter_in_stock(self, api_manager):
+        response = api_manager.products_api.get_products(
+            params={"in_stock": True}
+        )
+        items = response.json()["items"]
+        assert all(item["stock"] > 0 for item in items)
+
+    def test_filter_price_range(self, api_manager):
+        price_min, price_max = DataGenerator.generate_price_range()
+        response = api_manager.products_api.get_products(
+            params={"price_min": price_min, "price_max": price_max, "size": 100}
+        )
+        items = response.json()["items"]
+
+        for item in items:
+            price = Decimal(item["price"])
+            assert Decimal(str(price_min)) <= price <= Decimal(str(price_max))

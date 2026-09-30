@@ -11,5 +11,7 @@ class CategoriesAPI(CustomRequester):
 
     def get_categories(self, expected_status=200):
         return self.send_request(
-            "GET", self.CATEGORIES_URL, expected_status=expected_status
+            "GET",
+            self.CATEGORIES_URL,
+            expected_status=expected_status,
         )
