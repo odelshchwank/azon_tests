@@ -3,7 +3,6 @@ from requester.custom_requester import CustomRequester
 
 
 class CategoriesAPI(CustomRequester):
-
     CATEGORIES_URL = "/api/v1/categories"
 
     def __init__(self, session):

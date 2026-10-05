@@ -1,9 +1,9 @@
 from config.hosts import AUTH_URL
+from models.users import LoginRequest
 from requester.custom_requester import CustomRequester
 
 
 class AuthAPI(CustomRequester):
-
     REGISTER_ENDPOINT = "/api/v1/auth/register"
     LOGIN_ENDPOINT = "/api/v1/auth/login"
 
@@ -26,9 +26,8 @@ class AuthAPI(CustomRequester):
             expected_status=expected_status,
         )
 
-    def authenticate(self, user_creds):
-        email, password = user_creds
-        response = self.login_user({"email": email, "password": password})
+    def authenticate(self, credentials: LoginRequest):
+        response = self.login_user(credentials)
         token = response.json()["access_token"]
         self._update_session_headers(Authorization=f"Bearer {token}")
         return response

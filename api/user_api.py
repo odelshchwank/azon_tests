@@ -3,7 +3,6 @@ from requester.custom_requester import CustomRequester
 
 
 class UserAPI(CustomRequester):
-
     ME_ENDPOINT = "/api/v1/users/me"
     CHANGE_PASSWORD_ENDPOINT = "/api/v1/users/me/password"
 

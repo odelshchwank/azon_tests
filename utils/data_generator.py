@@ -6,7 +6,6 @@ fake = Faker("en_US")
 
 
 class DataGenerator:
-
     @staticmethod
     def generate_email():
         return f"student-{uuid.uuid4().hex[:8]}@example.com"
@@ -43,4 +42,4 @@ class DataGenerator:
 
     @staticmethod
     def generate_sku():
-        return uuid.uuid4().hex
+        return f"TEST-{uuid.uuid4().hex[:12]}"
