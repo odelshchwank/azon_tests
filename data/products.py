@@ -1,6 +1,11 @@
 import uuid
+from decimal import Decimal
 
-from models.products import ProductRequest
+from models.products import (
+    ProductRequest,
+    CartItemAddRequest,
+    ProductPriceUpdateRequest,
+)
 from utils.data_generator import DataGenerator
 
 
@@ -28,9 +33,19 @@ class ProductData:
         return dict(overrides)
 
     @staticmethod
-    def price_data(price=None) -> dict:
-        return {"price": price if price is not None else DataGenerator.generate_price()}
-
-    @staticmethod
     def nonexistent_category_id() -> str:
         return str(uuid.uuid4())
+
+    @staticmethod
+    def cart_item_data(product_id: uuid.UUID, quantity: int = 1) -> CartItemAddRequest:
+        return CartItemAddRequest(product_id=product_id, quantity=quantity)
+
+    @staticmethod
+    def price_data(
+        current_price: Decimal | str | None = None,
+    ) -> ProductPriceUpdateRequest:
+        price = Decimal("19990.00")
+        if current_price is not None and Decimal(str(current_price)) == price:
+            price = Decimal("19991.00")
+
+        return ProductPriceUpdateRequest(price=price)

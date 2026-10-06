@@ -5,6 +5,7 @@ from api.api_manager import ApiManager
 from config.credentials import ADMIN_INVITE_CODE, MANAGER_INVITE_CODE
 from data.products import ProductData
 from data.users import UserData
+from db.db_manager import DBManager
 from models.products import ProductResponse
 from models.users import RegisteredUser, UserResponse
 
@@ -95,3 +96,25 @@ def pytest_collection_modifyitems(items):
     for item in items:
         if "admin_manager" in item.fixturenames:
             item.add_marker(skip_admin)
+
+
+@pytest.fixture(scope="session")
+def db():
+    manager = DBManager()
+    yield manager
+    manager.close()
+
+
+@pytest.fixture
+def created_order(api_manager, authenticated_user, created_product):
+    api_manager.cart_api.add_item(ProductData.cart_item_data(created_product.id))
+
+    response = api_manager.payment_api.checkout()
+    order = response.json()
+
+    yield order
+
+    try:
+        api_manager.payment_api.cancel_order(order["id"])
+    except AssertionError:
+        pass

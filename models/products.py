@@ -47,3 +47,20 @@ class ProductsPage(BaseModel):
     page: int
     size: int
     pages: int
+
+
+class CartItemAddRequest(BaseModel):
+    """Тело POST /api/v1/cart/items."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    product_id: UUID
+    quantity: int = Field(ge=1, le=100)
+
+
+class ProductPriceUpdateRequest(BaseModel):
+    """Тело PATCH /api/v1/products/{product_id}/price."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    price: Decimal = Field(gt=0, le=1_000_000, decimal_places=2)

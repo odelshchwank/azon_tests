@@ -109,12 +109,13 @@ class TestProducts:
     def test_update_price_positive(
         self, api_manager, authenticated_admin, created_product
     ):
-        new_price = 12345.67
+        price_request = ProductData.price_data(current_price=created_product.price)
+
         updated = api_manager.products_api.update_price(
-            created_product.id, ProductData.price_data(new_price)
+            created_product.id, price_request
         ).json()
 
-        assert Decimal(updated["price"]) == Decimal(str(new_price))
+        assert Decimal(updated["price"]) == price_request.price
 
     @requires_admin
     @pytest.mark.roles
@@ -130,10 +131,12 @@ class TestProducts:
     def test_update_price_boundaries(
         self, api_manager, authenticated_admin, created_product, new_price
     ):
+        price_request = ProductData.price_data(current_price=created_product.price)
+
         updated = api_manager.products_api.update_price(
-            created_product.id, ProductData.price_data(new_price)
+            created_product.id, price_request
         ).json()
-        assert Decimal(updated["price"]) == Decimal(str(new_price))
+        assert Decimal(updated["price"]) == price_request.price
 
     @pytest.mark.parametrize("page,size", [(1, 5), (1, 10), (2, 5)])
     def test_pagination(self, api_manager, page, size):
