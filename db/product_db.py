@@ -16,9 +16,20 @@ class ProductDB(DBClient):
             SELECT ci.product_id, ci.quantity, ci.price_at_add, p.name
             FROM cart_items ci
             JOIN carts c ON c.id = ci.cart_id
-            JOIN product p ON p.id = ci.product_id
+            JOIN products p ON p.id = ci.product_id
             WHERE user_id = %s
             ORDER BY ci.added_at
             """,
             (user_id,),
         )
+
+    def count_active_products(self, category_id):
+        row = self.fetch_one(
+            """
+            SELECT count(*) AS total
+            FROM products
+            WHERE category_id = %s AND deleted_at IS NULL
+            """,
+            (category_id,),
+        )
+        return row["total"]
