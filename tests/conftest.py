@@ -1,11 +1,17 @@
 import pytest
 import requests
+from requests import session
 
 from api.api_manager import ApiManager
+from api.auth_api import AuthAPI
+from api.products_api import ProductsAPI
+from api.user_api import UserAPI
 from config.credentials import ADMIN_INVITE_CODE, MANAGER_INVITE_CODE
+from config.hosts import MOCK_URL
 from data.products import ProductData
 from data.users import UserData
 from db.db_manager import DBManager
+from mocks.wiremock_admin import WireMockAdmin
 from models.products import ProductResponse
 from models.users import RegisteredUser, UserResponse
 
@@ -118,3 +124,32 @@ def created_order(api_manager, authenticated_user, created_product):
         api_manager.payment_api.cancel_order(order["id"])
     except AssertionError:
         pass
+
+
+@pytest.fixture
+def wiremock():
+    """Чистый WireMock перед каждым тестом: свои стабы, свой журнал запросов."""
+    admin = WireMockAdmin()
+
+    if not admin.is_running():
+        pytest.skip(f"WireMock не отвечает на {MOCK_URL} - тесты с моками пропускаем")
+
+    admin.reset()
+    yield admin
+    admin.session.close()
+
+
+@pytest.fixture
+def mock_products_api(wiremock):
+    """ProductsAPI, но смотрит на мок."""
+    session = requests.Session()
+    yield ProductsAPI(session, base_url=MOCK_URL)
+    session.close()
+
+
+@pytest.fixture
+def mock_auth(wiremock):
+    """AuthAPI и UserAPI на одной сессии, но оба смотрят в мок."""
+    session = requests.Session()
+    yield AuthAPI(session, base_url=MOCK_URL), UserAPI(session, base_url=MOCK_URL)
+    session.close()

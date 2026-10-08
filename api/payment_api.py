@@ -5,8 +5,8 @@ from requester.custom_requester import CustomRequester
 class PaymentAPI(CustomRequester):
     ORDERS_ENDPOINT = "/api/v1/orders"
 
-    def __init__(self, session):
-        super().__init__(session, base_url=PAYMENT_URL)
+    def __init__(self, session, base_url=PAYMENT_URL):
+        super().__init__(session, base_url)
 
     def get_orders(self, params=None, expected_status=200):
         return self.send_request(

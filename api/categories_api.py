@@ -5,8 +5,8 @@ from requester.custom_requester import CustomRequester
 class CategoriesAPI(CustomRequester):
     CATEGORIES_URL = "/api/v1/categories"
 
-    def __init__(self, session):
-        super().__init__(session, base_url=PRODUCT_URL)
+    def __init__(self, session, base_url=PRODUCT_URL):
+        super().__init__(session, base_url)
 
     def get_categories(self, expected_status=200):
         return self.send_request(

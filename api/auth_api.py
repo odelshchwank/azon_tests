@@ -7,8 +7,8 @@ class AuthAPI(CustomRequester):
     REGISTER_ENDPOINT = "/api/v1/auth/register"
     LOGIN_ENDPOINT = "/api/v1/auth/login"
 
-    def __init__(self, session):
-        super().__init__(session, base_url=AUTH_URL)
+    def __init__(self, session, base_url=AUTH_URL):
+        super().__init__(session, base_url)
 
     def register_user(self, user_data, expected_status=201):
         return self.send_request(
