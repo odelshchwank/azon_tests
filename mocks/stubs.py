@@ -136,6 +136,45 @@ class ProductStubs:
             },
         }
 
+    @staticmethod
+    def catalog_page(items):
+        """Стаб страницы каталога"""
+        return {
+            "request": {
+                "method": "GET",
+                "urlPath": PRODUCTS_ENDPOINT,
+                "queryParameters": {
+                    "page": {"equalTo": "1"},
+                    "size": {"equalTo": "2"},
+                },
+            },
+            "response": {
+                "status": 200,
+                "headers": JSON_HEADERS,
+                "jsonBody": {
+                    "items": items,
+                    "total": len(items),
+                    "page": 1,
+                    "size": 2,
+                    "pages": 1,
+                },
+            },
+        }
+
+    @staticmethod
+    def gateway_error(product_id):
+        return {
+            "request": {
+                "method": "GET",
+                "urlPath": f"{PRODUCTS_ENDPOINT}/api/v1/{product_id}",
+            },
+            "response": {
+                "status": 503,
+                "headers": JSON_HEADERS,
+                "jsonBody": error_body("GATEWAY_ERROR", "Upstream is unavailable"),
+            },
+        }
+
 
 class AuthStubs:
     """Стабы Auth и User API: регистрация, вход, профиль."""
@@ -183,6 +222,23 @@ class AuthStubs:
                     "Authorization": {
                         "equalTo": f"Bearer {access_token}",
                     },
+                },
+            },
+            "response": {
+                "status": 200,
+                "headers": JSON_HEADERS,
+                "jsonBody": user_body(),
+            },
+        }
+
+    @staticmethod
+    def me_accepts_patch(access_token=MOCK_TOKEN):
+        return {
+            "request": {
+                "method": "PATCH",
+                "urlPath": ME_ENDPOINT,
+                "headers": {
+                    "Authorization": {"equalTo": f"Bearer {access_token}"},
                 },
             },
             "response": {
