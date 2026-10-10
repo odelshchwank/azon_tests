@@ -13,7 +13,11 @@ def test_new_product_increases_category_counter(admin_manager, category_id, db):
         ProductData.creation_product_data(category_id)
     ).json()
 
-    assert db.product.count_active_products(category_id) == before + 1
+    try:
+        assert db.product.count_active_products(category_id) == before + 1
+    finally:
+        admin_manager.products_api.delete_product(
+            product["id"], expected_status=[204, 404]
+        )
 
-    admin_manager.products_api.delete_product(product["id"])
     assert db.product.count_active_products(category_id) == before

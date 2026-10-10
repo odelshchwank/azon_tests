@@ -3,16 +3,19 @@ import requests
 
 from api.api_manager import ApiManager
 from api.auth_api import AuthAPI
+from api.payment_api import PaymentAPI
 from api.products_api import ProductsAPI
 from api.reviews_api import ReviewAPI
 from api.user_api import UserAPI
 from config.credentials import ADMIN_INVITE_CODE, MANAGER_INVITE_CODE
 from config.hosts import MOCK_URL
+from data.orders import OrderData
 from data.products import ProductData
 from data.reviews import ReviewData
 from data.users import UserData
 from db.db_manager import DBManager
 from mocks.wiremock_admin import WireMockAdmin
+from models.orders import OrderResponse
 from models.products import ProductResponse
 from models.reviews import ReviewResponse
 from models.users import RegisteredUser, UserResponse
@@ -97,18 +100,22 @@ def created_product(admin_manager, category_id) -> ProductResponse:
 @pytest.fixture
 def out_of_stock_product(admin_manager, category_id):
     product_request = ProductData.creation_product_data(category_id)
-    product = admin_manager.products_api.create_product(product_request).json()
-    admin_manager.products_api.update_product(product["id"], {"stock": 0})
+    product = ProductResponse.model_validate(
+        admin_manager.products_api.create_product(product_request).json()
+    )
+    admin_manager.products_api.update_product(
+        product.id, ProductData.update_product_data(stock=0)
+    )
 
     yield product
 
-    admin_manager.products_api.delete_product(product["id"])
+    admin_manager.products_api.delete_product(product.id, expected_status=[204, 404])
 
 
 def pytest_collection_modifyitems(items):
     if ADMIN_INVITE_CODE and MANAGER_INVITE_CODE:
         return
-    skip_admin = pytest.mark.skip(reason="в env. нет ADMIN_INVITE_CODE")
+    skip_admin = pytest.mark.skip(reason="в .env нет ADMIN_INVITE_CODE")
     for item in items:
         if "admin_manager" in item.fixturenames:
             item.add_marker(skip_admin)
@@ -119,21 +126,6 @@ def db():
     manager = DBManager()
     yield manager
     manager.close()
-
-
-@pytest.fixture
-def created_order(api_manager, authenticated_user, created_product):
-    api_manager.cart_api.add_item(ProductData.cart_item_data(created_product.id))
-
-    response = api_manager.payment_api.checkout()
-    order = response.json()
-
-    yield order
-
-    try:
-        api_manager.payment_api.cancel_order(order["id"])
-    except AssertionError:
-        pass
 
 
 @pytest.fixture
@@ -205,4 +197,45 @@ def store_manager():
 def other_user():
     manager, session = _manager_with_role(None)
     yield manager
+    session.close()
+
+
+@pytest.fixture
+def awaiting_order(
+    api_manager,
+    authenticated_user,
+    created_product,
+):
+    api_manager.cart_api.add_item(ProductData.cart_item_data(created_product.id))
+    response = api_manager.payment_api.checkout()
+    order = OrderResponse.model_validate(response.json())
+
+    assert order.status == "AWAITING_PAYMENT"
+
+    yield order
+
+    api_manager.payment_api.cancel_order(
+        order.id,
+        expected_status=[200, 404, 409],
+    )
+
+
+@pytest.fixture
+def paid_order(
+    api_manager,
+    authenticated_user,
+    created_product,
+):
+    api_manager.cart_api.add_item(ProductData.cart_item_data(created_product.id))
+    response = api_manager.payment_api.checkout()
+    order = OrderResponse.model_validate(response.json())
+    api_manager.payment_api.pay_order(order.id, OrderData.payment_success())
+
+    yield order
+
+
+@pytest.fixture
+def mock_payment_api(wiremock):
+    session = requests.Session()
+    yield PaymentAPI(session, base_url=MOCK_URL)
     session.close()

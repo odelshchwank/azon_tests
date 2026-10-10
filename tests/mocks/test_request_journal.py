@@ -3,8 +3,7 @@ import json
 import pytest
 
 from data.users import UserData
-from mocks.stubs import ME_ENDPOINT, REGISTER_ENDPOINT, AuthStubs, LOGIN_ENDPOINT
-from tests.conftest import mock_auth
+from mocks.stubs import LOGIN_ENDPOINT, ME_ENDPOINT, REGISTER_ENDPOINT, AuthStubs
 
 pytestmark = [pytest.mark.mock, pytest.mark.auth]
 

@@ -26,8 +26,10 @@ class TestProducts:
         created = []
         for _ in range(10):
             product_data = ProductData.creation_product_data(category_id)
+            created.append(
+                admin_manager.products_api.create_product(product_data).json()
+            )
 
-        created.append(admin_manager.products_api.create_product(product_data).json())
         response = admin_manager.products_api.get_products(
             params={
                 "category_id": category_id,
@@ -41,7 +43,10 @@ class TestProducts:
             assert {product["id"] for product in created} <= catalog_ids
         finally:
             for product in created:
-                admin_manager.products_api.delete_product(product["id"])
+                admin_manager.products_api.delete_product(
+                    product["id"],
+                    expected_status=[204, 404],
+                )
 
     def test_products_price_filter_return_items_above_min(self, api_manager):
         page = ProductsPage.model_validate(
@@ -109,7 +114,8 @@ class TestProducts:
     def test_update_price_positive(
         self, api_manager, authenticated_admin, created_product
     ):
-        price_request = ProductData.price_data(current_price=created_product.price)
+        new_price = created_product.price + Decimal("1.00")
+        price_request = ProductData.price_data(new_price)
 
         updated = api_manager.products_api.update_price(
             created_product.id, price_request
@@ -131,7 +137,7 @@ class TestProducts:
     def test_update_price_boundaries(
         self, api_manager, authenticated_admin, created_product, new_price
     ):
-        price_request = ProductData.price_data(current_price=created_product.price)
+        price_request = ProductData.price_data(new_price=Decimal(str(new_price)))
 
         updated = api_manager.products_api.update_price(
             created_product.id, price_request
@@ -247,7 +253,7 @@ class TestProducts:
     def test_in_stock_true_hides_empty_stock(self, api_manager, out_of_stock_product):
         response = api_manager.products_api.get_products(
             params={
-                "search": out_of_stock_product["name"],
+                "search": out_of_stock_product.name,
                 "in_stock": "true",
             }
         )

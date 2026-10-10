@@ -42,10 +42,8 @@ class ProductData:
 
     @staticmethod
     def price_data(
-        current_price: Decimal | str | None = None,
+        new_price: Decimal | None = None,
     ) -> ProductPriceUpdateRequest:
-        price = Decimal("19990.00")
-        if current_price is not None and Decimal(str(current_price)) == price:
-            price = Decimal("19991.00")
-
-        return ProductPriceUpdateRequest(price=price)
+        return ProductPriceUpdateRequest(
+            price=new_price if new_price is not None else Decimal("19990.00")
+        )

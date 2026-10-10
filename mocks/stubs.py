@@ -314,3 +314,26 @@ class ReviewStubs:
                 ),
             },
         }
+
+
+class PaymentStubs:
+    ORDERS_ENDPOINT = "/api/v1/orders"
+
+    @staticmethod
+    def slow_payment(order_id, delay_ms=10_000):
+        return {
+            "request": {
+                "method": "POST",
+                "urlPath": f"{PaymentStubs.ORDERS_ENDPOINT}/{order_id}/pay",
+            },
+            "response": {
+                "status": 201,
+                "headers": JSON_HEADERS,
+                "jsonBody": {
+                    "payment_id": "00000000000000000000000000000000",
+                    "status": "SUCCEEDED",
+                    "order_status": "PAID",
+                },
+                "fixedDelayMilliseconds": delay_ms,
+            },
+        }
