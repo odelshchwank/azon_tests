@@ -236,11 +236,24 @@ class TestProducts:
         reason="AZON-142: фильтр in_stock=false не отбирает товары без остатка"
     )
     def test_filter_out_of_stock(self, api_manager):
-        items = api_manager.products_api.get_products(
+        response = api_manager.products_api.get_products(
             params={"in_stock": False, "size": 100}
-        ).json()["items"]
+        )
 
-        assert all(item["stock"] == 0 for item in items)
+        items = ProductsPage.model_validate(response.json()).items
+
+        assert all(item.stock == 0 for item in items)
+
+    def test_in_stock_true_hides_empty_stock(self, api_manager, out_of_stock_product):
+        response = api_manager.products_api.get_products(
+            params={
+                "search": out_of_stock_product["name"],
+                "in_stock": "true",
+            }
+        )
+
+        page = ProductsPage.model_validate(response.json())
+        assert page.total == 0
 
 
 @pytest.mark.negative

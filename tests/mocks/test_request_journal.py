@@ -50,6 +50,7 @@ def test_registration_body_has_no_nulls(wiremock, mock_auth):
         "full_name": registration.full_name,
     }
 
+
 def test_password_goes_only_into_the_body(wiremock, mock_auth):
     auth_api, _ = mock_auth
     wiremock.add_stub(AuthStubs.login_ok())
@@ -57,10 +58,12 @@ def test_password_goes_only_into_the_body(wiremock, mock_auth):
 
     auth_api.authenticate(data)
 
-    sent = wiremock.find_requests({
-        "method": "POST",
-        "urlPath": LOGIN_ENDPOINT,
-    })[0]
+    sent = wiremock.find_requests(
+        {
+            "method": "POST",
+            "urlPath": LOGIN_ENDPOINT,
+        }
+    )[0]
     assert sent["url"] == LOGIN_ENDPOINT
     assert data.password not in json.dumps(sent["headers"], ensure_ascii=False)
     assert json.loads(sent["body"])["password"] == data.password

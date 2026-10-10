@@ -5,7 +5,7 @@ import requests.exceptions
 
 from mocks.stubs import ProductStubs
 
-pytestmark = [pytest.mark.mock, pytest.mark.products]
+pytestmark = [pytest.mark.mock, pytest.mark.products, pytest.mark.negative]
 
 
 def test_server_error_message_is_readable(wiremock, mock_products_api):

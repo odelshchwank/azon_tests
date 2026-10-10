@@ -2,9 +2,9 @@ import uuid
 from decimal import Decimal
 
 from models.products import (
-    ProductRequest,
     CartItemAddRequest,
     ProductPriceUpdateRequest,
+    ProductRequest,
 )
 from utils.data_generator import DataGenerator
 

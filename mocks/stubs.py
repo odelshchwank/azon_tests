@@ -1,7 +1,11 @@
+import uuid
+
 PRODUCTS_ENDPOINT = "/api/v1/products"
 REGISTER_ENDPOINT = "/api/v1/auth/register"
 LOGIN_ENDPOINT = "/api/v1/auth/login"
 ME_ENDPOINT = "/api/v1/users/me"
+PRODUCT_ID = "11111111111111111111111111111111"
+REVIEWS_PATH = f"/api/v1/products/{PRODUCT_ID}/reviews"
 
 MOCK_TOKEN = "mock-access-token"
 JSON_HEADERS = {"Content-Type": "application/json"}
@@ -22,8 +26,8 @@ def product_body(product_id, **overrides):
         "reviews_count": 3,
         "is_seed": False,
         "is_available": True,
-        "created_at": "2026-08-06T12:00:00Z",
-        "updated_at": "2026-08-06T12:00:00Z",
+        "created_at": "2026-09-01T12:00:00Z",
+        "updated_at": "2026-09-01T12:00:00Z",
     }
     return {**body, **overrides}
 
@@ -37,7 +41,7 @@ def user_body(**overrides):
         "phone": None,
         "role": "USER",
         "is_active": True,
-        "created_at": "2026-08-06T12:00:00Z",
+        "created_at": "2026-09-01T12:00:00Z",
     }
     return {**body, **overrides}
 
@@ -91,7 +95,10 @@ class ProductStubs:
             "response": {
                 "status": 404,
                 "headers": JSON_HEADERS,
-                "jsonBody": error_body("PRODUCT_NOT_FOUND", "Product not found"),
+                "jsonBody": error_body(
+                    "PRODUCT_NOT_FOUND",
+                    "Product not found",
+                ),
             },
         }
 
@@ -105,7 +112,10 @@ class ProductStubs:
             "response": {
                 "status": 500,
                 "headers": JSON_HEADERS,
-                "jsonBody": error_body("INTERNAL_ERROR", "Internal server error"),
+                "jsonBody": error_body(
+                    "INTERNAL_ERROR",
+                    "Internal server error",
+                ),
             },
         }
 
@@ -166,12 +176,15 @@ class ProductStubs:
         return {
             "request": {
                 "method": "GET",
-                "urlPath": f"{PRODUCTS_ENDPOINT}/api/v1/{product_id}",
+                "urlPath": f"{PRODUCTS_ENDPOINT}/{product_id}",
             },
             "response": {
                 "status": 503,
                 "headers": JSON_HEADERS,
-                "jsonBody": error_body("GATEWAY_ERROR", "Upstream is unavailable"),
+                "jsonBody": error_body(
+                    "GATEWAY_ERROR",
+                    "Upstream is unavailable",
+                ),
             },
         }
 
@@ -245,5 +258,59 @@ class AuthStubs:
                 "status": 200,
                 "headers": JSON_HEADERS,
                 "jsonBody": user_body(),
+            },
+        }
+
+
+class ReviewStubs:
+    @staticmethod
+    def review_body(rating=5, **overrides):
+        body = {
+            "id": str(uuid.uuid4()),
+            "product_id": str(uuid.uuid4()),
+            "user_id": str(uuid.uuid4()),
+            "user_name": "mock@example.com",
+            "rating": rating,
+            "text": "Всё чётко, респект",
+            "is_seed": False,
+            "created_at": "2026-09-01T12:00:00Z",
+            "updated_at": "2026-09-01T12:00:00Z",
+        }
+        return {**body, **overrides}
+
+    @staticmethod
+    def reviews_page_stub(items):
+        return {
+            "request": {
+                "method": "GET",
+                "urlPath": REVIEWS_PATH,
+            },
+            "response": {
+                "status": 200,
+                "headers": JSON_HEADERS,
+                "jsonBody": {
+                    "items": items,
+                    "total": len(items),
+                    "page": 1,
+                    "size": 15,
+                    "pages": 1,
+                },
+            },
+        }
+
+    @staticmethod
+    def reviews_server_error():
+        return {
+            "request": {
+                "method": "GET",
+                "urlPath": REVIEWS_PATH,
+            },
+            "response": {
+                "status": 500,
+                "headers": JSON_HEADERS,
+                "jsonBody": error_body(
+                    "INTERNAL_ERROR",
+                    "Internal server error",
+                ),
             },
         }

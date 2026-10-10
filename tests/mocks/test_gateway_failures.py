@@ -13,7 +13,7 @@ def test_gateway_error_is_reported_clearly(wiremock, mock_products_api):
     wiremock.add_stub(ProductStubs.gateway_error(product_id))
 
     with pytest.raises(AssertionError) as error:
-        mock_products_api.get_products(product_id)
+        mock_products_api.get_product(product_id)
 
     assert "ожидали статус 200, получили 503" in str(error.value)
     assert "GATEWAY_ERROR" in str(error.value)

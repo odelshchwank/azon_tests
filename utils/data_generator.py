@@ -43,3 +43,7 @@ class DataGenerator:
     @staticmethod
     def generate_sku():
         return f"TEST-{uuid.uuid4().hex[:12]}"
+
+    @staticmethod
+    def generate_review_text():
+        return fake.sentence(nb_words=10)

@@ -1,18 +1,20 @@
 import pytest
 import requests
-from requests import session
 
 from api.api_manager import ApiManager
 from api.auth_api import AuthAPI
 from api.products_api import ProductsAPI
+from api.reviews_api import ReviewAPI
 from api.user_api import UserAPI
 from config.credentials import ADMIN_INVITE_CODE, MANAGER_INVITE_CODE
 from config.hosts import MOCK_URL
 from data.products import ProductData
+from data.reviews import ReviewData
 from data.users import UserData
 from db.db_manager import DBManager
 from mocks.wiremock_admin import WireMockAdmin
 from models.products import ProductResponse
+from models.reviews import ReviewResponse
 from models.users import RegisteredUser, UserResponse
 
 
@@ -62,13 +64,9 @@ def authenticated_manager(api_manager):
 
 @pytest.fixture(scope="session")
 def admin_manager():
-    admin_session = requests.Session()
-    manager = ApiManager(admin_session)
-    admin_credentials = UserData.registration_data(ADMIN_INVITE_CODE)
-    manager.auth_api.register_user(admin_credentials)
-    manager.auth_api.authenticate(UserData.login_data(admin_credentials))
+    manager, session = _manager_with_role(ADMIN_INVITE_CODE)
     yield manager
-    admin_session.close()
+    session.close()
 
 
 @pytest.fixture
@@ -76,10 +74,11 @@ def authenticated_admin(api_manager):
     return _register_and_authenticate(api_manager, ADMIN_INVITE_CODE)
 
 
-@pytest.fixture
-def category_id(api_manager):
-    categories = api_manager.categories_api.get_categories().json()
-    assert categories, "Список категорий пуст"
+@pytest.fixture(scope="session")
+def category_id():
+    session = requests.Session()
+    categories = ApiManager(session).categories_api.get_categories().json()
+    session.close()
     return categories[0]["id"]
 
 
@@ -93,6 +92,17 @@ def created_product(admin_manager, category_id) -> ProductResponse:
     yield product
 
     admin_manager.products_api.delete_product(product.id, expected_status=[204, 404])
+
+
+@pytest.fixture
+def out_of_stock_product(admin_manager, category_id):
+    product_request = ProductData.creation_product_data(category_id)
+    product = admin_manager.products_api.create_product(product_request).json()
+    admin_manager.products_api.update_product(product["id"], {"stock": 0})
+
+    yield product
+
+    admin_manager.products_api.delete_product(product["id"])
 
 
 def pytest_collection_modifyitems(items):
@@ -152,4 +162,47 @@ def mock_auth(wiremock):
     """AuthAPI и UserAPI на одной сессии, но оба смотрят в мок."""
     session = requests.Session()
     yield AuthAPI(session, base_url=MOCK_URL), UserAPI(session, base_url=MOCK_URL)
+    session.close()
+
+
+@pytest.fixture
+def mock_reviews_api(wiremock):
+    session = requests.Session()
+    yield ReviewAPI(session, base_url=MOCK_URL)
+    session.close()
+
+
+@pytest.fixture
+def created_review(
+    api_manager,
+    authenticated_user,
+    created_product,
+) -> ReviewResponse:
+    response = api_manager.review_api.create_review(
+        created_product.id,
+        ReviewData.creation_review_data(),
+    )
+    return ReviewResponse.model_validate(response.json())
+
+
+def _manager_with_role(invite_code):
+    session = requests.Session()
+    manager = ApiManager(session)
+    user_data = UserData.registration_data(invite_code)
+    manager.auth_api.register_user(user_data)
+    manager.auth_api.authenticate(UserData.login_data(user_data))
+    return manager, session
+
+
+@pytest.fixture
+def store_manager():
+    manager, session = _manager_with_role(MANAGER_INVITE_CODE)
+    yield manager
+    session.close()
+
+
+@pytest.fixture
+def other_user():
+    manager, session = _manager_with_role(None)
+    yield manager
     session.close()

@@ -33,3 +33,45 @@ class ProductDB(DBClient):
             (category_id,),
         )
         return row["total"]
+
+    def get_review(self, review_id):
+        return self.fetch_one(
+            """
+            SELECT *
+            FROM reviews
+            WHERE id = %s
+            """,
+            (review_id,),
+        )
+
+    def count_reviews(self, product_id):
+        row = self.fetch_one(
+            """
+            SELECT count(*) AS total
+            FROM reviews
+            WHERE product_id = %s
+            """,
+            (product_id,),
+        )
+        return row["total"]
+
+    def avg_rating(self, product_id):
+        row = self.fetch_one(
+            """
+            SELECT round(avg(rating), 2) AS avg_rating
+            FROM reviews
+            WHERE product_id = %s 
+            """,
+            (product_id,),
+        )
+        return row["avg_rating"]
+
+    def get_moderation_record(self, review_id):
+        return self.fetch_one(
+            """
+            SELECT action, actor_user_id, payload
+            FROM audit_log
+            WHERE action = 'REVIEW_MODERATE_DELETE' AND entity_id = %s
+            """,
+            (str(review_id),),
+        )
