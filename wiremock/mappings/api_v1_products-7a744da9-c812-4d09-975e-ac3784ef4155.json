@@ -1,0 +1,28 @@
+{
+  "id" : "7a744da9-c812-4d09-975e-ac3784ef4155",
+  "name" : "api_v1_products",
+  "request" : {
+    "urlPath" : "/api/v1/products",
+    "method" : "GET",
+    "queryParameters" : {
+      "size" : {
+        "hasExactly" : [ {
+          "equalTo" : "1"
+        } ]
+      }
+    }
+  },
+  "response" : {
+    "status" : 200,
+    "body" : "{\"items\":[{\"id\":\"0169e2e8-f8bf-5a3a-9a38-26ec84db79ee\",\"sku\":\"EL-004\",\"name\":\"Умные часы AZON Watch 5\",\"description\":\"GPS, пульсоксиметр, 7 дней без подзарядки.\",\"price\":\"19990.00\",\"stock\":10000,\"category_id\":\"4ca772c1-bdb7-5e5f-9987-16fe30e499c8\",\"image_url\":\"/api/v1/products/0169e2e8-f8bf-5a3a-9a38-26ec84db79ee/image\",\"rating_avg\":4.0,\"reviews_count\":1,\"is_seed\":true,\"is_available\":true,\"created_at\":\"2026-10-09T03:00:00.429928Z\",\"updated_at\":\"2026-10-09T03:00:00.429928Z\"}],\"total\":48,\"page\":1,\"size\":1,\"pages\":48}",
+    "headers" : {
+      "x-request-id" : "0833085b-9d18-48b0-b02d-128b190a1582",
+      "Server" : "nginx/1.24.0 (Ubuntu)",
+      "Date" : "Fri, 09 Oct 2026 12:37:11 GMT",
+      "Content-Type" : "application/json"
+    }
+  },
+  "uuid" : "7a744da9-c812-4d09-975e-ac3784ef4155",
+  "persistent" : true,
+  "insertionIndex" : 25
+}
