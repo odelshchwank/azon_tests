@@ -2,11 +2,20 @@ import json
 import logging
 from typing import Any
 
-import pytest
 
 DEFAULT_TIMEOUT = 10
+SECRET_FIELDS = (
+    "password",
+    "new_password",
+    "old_password",
+    "invite_code",
+    "access_token",
+    "refresh_token",
+    "token",
+)
 
 logger = logging.getLogger("azon_tests")
+
 
 class CustomRequester:
 
@@ -26,7 +35,12 @@ class CustomRequester:
         response = self.session.request(method, url, **kwargs)
         self._log_request_and_response(response)
 
-        if response.status_code != expected_status:
+        if isinstance(expected_status, int):
+            allowed = {expected_status}
+        else:
+            allowed = set(expected_status)
+
+        if response.status_code not in allowed:
             raise AssertionError(
                 f"{method} {url}: ожидали статус {expected_status}, "
                 f"получили {response.status_code}. Тело ответа: {response.text}"
@@ -40,18 +54,23 @@ class CustomRequester:
         request = response.request
         logger.info("--> %s %s", request.method, request.url)
         if request.body:
-            hidden = self._mask_password(request.body)
-            logger.info("   тело запроса: %s", hidden)
+            logger.info(
+                "   тело запроса: %s", self._mask_secrets(request.body)
+            )
         logger.info(
             "<-- %s за %.2f с: %s",
             response.status_code,
             response.elapsed.total_seconds(),
-            response.text[:500],
+            self._mask_secrets(response.text)[:500],
         )
 
     @staticmethod
-    def _mask_password(body: Any):
+    def _mask_secrets(body: Any):
+        if not body:
+            return body
         body_dict = json.loads(body)
-        if "password" in body_dict:
-            body_dict["password"] = "***"
+        for field in SECRET_FIELDS:
+            if field in body_dict:
+                body_dict[field] = "***"
+
         return json.dumps(body_dict, ensure_ascii=False)

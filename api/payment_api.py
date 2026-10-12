@@ -11,5 +11,8 @@ class PaymentAPI(CustomRequester):
 
     def get_orders(self, params=None, expected_status=200):
         return self.send_request(
-            "GET", self.ORDERS_ENDPOINT, params=params, expected_status=expected_status
+            "GET",
+            self.ORDERS_ENDPOINT,
+            params=params,
+            expected_status=expected_status,
         )
