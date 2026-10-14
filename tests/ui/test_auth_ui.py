@@ -1,0 +1,31 @@
+import pytest
+from playwright.sync_api import expect
+
+from data.users import UserData
+from pages.login_page import LoginPage
+from pages.register_page import RegisterPage
+
+pytestmark = [pytest.mark.ui, pytest.mark.auth]
+
+
+class TestAuthUI:
+    @pytest.mark.negative
+    def test_login_with_wrong_password(self, page, api_manager):
+        user = UserData.registration_data()
+        api_manager.auth_api.register_user(user)
+
+        login_page = LoginPage(page).open()
+        login_page.login(user.email, "wrong-password-123")
+
+        expect(login_page.error).to_be_visible()
+        expect(login_page.error).to_have_text("Invalid email or password")
+
+    def test_registration_through_form_leads_to_login(self, page):
+        user = UserData.registration_data()
+        register_page = RegisterPage(page).open()
+
+        register_page.register(user.full_name, user.email, user.password)
+
+        login_page = LoginPage(page)
+        expect(login_page.flash).to_have_text("Аккаунт создан — войдите")
+        expect(login_page.form).to_be_visible()

@@ -1,5 +1,7 @@
+import allure
 import pytest
 import requests
+from playwright.sync_api import expect
 
 from api.api_manager import ApiManager
 from api.auth_api import AuthAPI
@@ -19,6 +21,7 @@ from models.orders import OrderResponse
 from models.products import ProductResponse
 from models.reviews import ReviewResponse
 from models.users import RegisteredUser, UserResponse
+from pages.login_page import LoginPage
 
 
 @pytest.fixture(scope="session")
@@ -239,3 +242,60 @@ def mock_payment_api(wiremock):
     session = requests.Session()
     yield PaymentAPI(session, base_url=MOCK_URL)
     session.close()
+
+
+@pytest.fixture
+def mobile_page(browser, playwright):
+    context = browser.new_context(**playwright.devices["iPhone 13"])
+    page = context.new_page()
+
+    yield page
+
+    context.close()
+
+
+@pytest.fixture
+def ui_user(api_manager):
+    registration = UserData.registration_data()
+    api_manager.auth_api.register_user(registration)
+    return registration
+
+
+def _login_through_ui(page, user):
+    login_page = LoginPage(page).open()
+    login_page.login(user.email, user.password)
+
+    expect(login_page.header.profile_link).to_have_text(user.email)
+    return page
+
+
+@pytest.fixture
+def logged_in_page(page, ui_user):
+    return _login_through_ui(page, ui_user)
+
+
+@pytest.fixture
+def logged_in_mobile_user(mobile_page, ui_user):
+    return _login_through_ui(mobile_page, ui_user)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call, trace_path=None):
+    outcome = yield
+    report = outcome.get_result()
+
+    if report.when != "call" or not report.failed:
+        return
+
+    page = item.funcargs.get("mobile_page") or item.funcargs.get("page")
+    if page is None:
+        return
+
+    allure.attach(
+        page.screenshot(full_page=True),
+        name="Скриншот в момент падения",
+        attachment_type=allure.attachment_type.PNG,
+    )
+    allure.attach(
+        page.url, name="Адрес страницы", attachment_type=allure.attachment_type.TEXT
+    )
