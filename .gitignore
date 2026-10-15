@@ -3,3 +3,7 @@ __pycache__/
 .idea/
 .env
 wiremock/*.jar
+auth.json
+allure-results/
+allure-report/
+test-results/
