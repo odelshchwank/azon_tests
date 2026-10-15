@@ -26,27 +26,27 @@ class CatalogPage(BasePage):
     def card(self, name):
         return self.cards.filter(has_text=name)
 
-    @allure.step("Найти в каталоге: {text}")
+    @allure.step("Ищем в каталоге: {text}")
     def search(self, text):
         self.search_input.fill(text)
         self.apply_button.click()
 
-    @allure.step("Выбрать категорию {name}")
+    @allure.step("Выбираем категорию {name}")
     def choose_category(self, name):
         self.category_select.select_option(label=name)
         self.apply_button.click()
 
-    @allure.step("Отсортировать каталог: {label}, {order}")
+    @allure.step("Сортируем каталог: {label}, {order}")
     def sort_by(self, label, order="По возрастанию"):
         self.sort_select.select_option(label=label)
         self.order_select.select_option(label=order)
         self.apply_button.click()
 
-    @allure.step("Положить «{name}» в корзину")
+    @allure.step("Кладём в корзину товар {name}")
     def add_to_cart(self, name):
         self.card(name).get_by_test_id("add-to-cart").click()
 
-    @allure.step("Открыть карточку «{name}»")
+    @allure.step("Открываем карточку товара {name}")
     def open_product(self, name):
         self.card(name).get_by_test_id("product-name").click()
 

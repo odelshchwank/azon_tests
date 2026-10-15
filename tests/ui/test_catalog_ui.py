@@ -1,6 +1,7 @@
 import re
 from decimal import Decimal
 
+import allure
 import pytest
 from playwright.sync_api import expect
 
@@ -13,7 +14,11 @@ def parse_price(text: str) -> Decimal:
     return Decimal(re.sub(r"[^\d.]", "", text))
 
 
+@allure.epic("Витрина AZON")
+@allure.feature("Каталог")
 class TestCatalogUI:
+    @allure.story("Отображение каталога")
+    @allure.title("Каталог показывает товары и счётчик")
     def test_catalog_shows_products(self, page):
         catalog_page = CatalogPage(page).open()
 
@@ -21,6 +26,8 @@ class TestCatalogUI:
         expect(catalog_page.total).to_contain_text("Найдено товаров")
         expect(catalog_page.cards.first).to_be_visible()
 
+    @allure.story("Поиск товара")
+    @allure.title("Поиск несуществующего товара показывает заглушку")
     @pytest.mark.negative
     def test_search_without_results_shows_empty_state(self, page):
         catalog_page = CatalogPage(page).open()
@@ -29,6 +36,8 @@ class TestCatalogUI:
         expect(catalog_page.empty).to_be_visible()
         expect(catalog_page.cards).to_have_count(0)
 
+    @allure.story("Фильтр по категории")
+    @allure.title("Фильтр «Книги» сужает выдачу")
     def test_category_filter_narrows_catalog(self, page):
         catalog_page = CatalogPage(page).open()
         all_products = catalog_page.total.inner_text()
@@ -40,6 +49,8 @@ class TestCatalogUI:
         )
         expect(catalog_page.total).not_to_have_text(all_products)
 
+    @allure.story("Сортировка")
+    @allure.title("Сортировка по цене по возрастанию")
     def test_sort_catalog_by_price_ascending(self, page):
         catalog_page = CatalogPage(page).open()
         catalog_page.sort_by("По цене", order="По возрастанию")
@@ -59,6 +70,8 @@ class TestCatalogUI:
         ]
         assert prices == sorted(prices), f"Цены не по возрастанию: {prices}"
 
+    @allure.story("Пагинация")
+    @allure.title("Кнопка «Вперёд» открывает вторую страницу")
     def test_catalog_pagination_moves_to_second_page(self, page):
         catalog_page = CatalogPage(page).open()
 
@@ -74,6 +87,8 @@ class TestCatalogUI:
             "Вторая страница показывает те же товары, что и первая"
         )
 
+    @allure.story("Гость и корзина")
+    @allure.title("Гость, нажавший «В корзину», попадает на /login")
     def test_guest_add_to_cart_goes_to_login(self, page, created_product):
         catalog_page = CatalogPage(page).open()
         catalog_page.search(created_product.name)
@@ -81,6 +96,8 @@ class TestCatalogUI:
 
         expect(page).to_have_url(re.compile(r"/login"))
 
+    @allure.story("Поиск товара")
+    @allure.title("Поиск находит товар из фикстуры")
     def test_search_finds_created_product(self, page, created_product):
         catalog_page = CatalogPage(page).open()
         catalog_page.search(created_product.name)

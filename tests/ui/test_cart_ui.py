@@ -48,7 +48,11 @@ class TestCartUI:
 
     @allure.story("Содержимое корзины")
     @allure.title("Смена количества пересчитывает итог")
-    def test_quantity_change_updates_total(self, logged_in_page, created_product):
+    def test_quantity_change_updates_total(
+        self,
+        logged_in_page,
+        created_product,
+    ):
         catalog_page = CatalogPage(logged_in_page).open()
         catalog_page.search(created_product.name)
         catalog_page.add_to_cart(created_product.name)
@@ -62,7 +66,9 @@ class TestCartUI:
         cart_page.set_quantity(created_product.name, 3)
 
         expect(
-            cart_page.item(created_product.name).get_by_test_id("cart-item-quantity")
+            cart_page.item(
+                created_product.name,
+            ).get_by_test_id("cart-item-quantity")
         ).to_have_value("3")
         expect(cart_page.total).not_to_have_text(one_item_total)
 

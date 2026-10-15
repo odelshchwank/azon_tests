@@ -280,7 +280,7 @@ def logged_in_mobile_user(mobile_page, ui_user):
 
 
 @pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_makereport(item, call, trace_path=None):
+def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
 

@@ -1,3 +1,4 @@
+import allure
 import pytest
 from playwright.sync_api import expect
 
@@ -8,7 +9,11 @@ from pages.orders_page import OrdersPage
 pytestmark = [pytest.mark.ui, pytest.mark.products]
 
 
+@allure.epic("Витрина AZON")
+@allure.feature("Мои заказы")
 class TestOrdersUI:
+    @allure.story("Список заказов")
+    @allure.title("Свежий заказ появляется в списке со статусом AWAITING_PAYMENT")
     def test_new_order_appears_in_list(self, logged_in_page, created_product):
         catalog_page = CatalogPage(logged_in_page).open()
         catalog_page.search(created_product.name)
