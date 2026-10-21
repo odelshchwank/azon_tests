@@ -9,7 +9,7 @@ from api.payment_api import PaymentAPI
 from api.products_api import ProductsAPI
 from api.reviews_api import ReviewAPI
 from api.user_api import UserAPI
-from config.credentials import ADMIN_INVITE_CODE, MANAGER_INVITE_CODE
+from config.credentials import INVITE_CODE_ADMIN, INVITE_CODE_MANAGER
 from config.hosts import MOCK_URL
 from data.orders import OrderData
 from data.products import ProductData
@@ -21,6 +21,7 @@ from models.orders import OrderResponse
 from models.products import ProductResponse
 from models.reviews import ReviewResponse
 from models.users import RegisteredUser, UserResponse
+from pages.catalog_page import CatalogPage
 from pages.login_page import LoginPage
 
 
@@ -65,19 +66,19 @@ def authenticated_user(api_manager):
 
 @pytest.fixture
 def authenticated_manager(api_manager):
-    return _register_and_authenticate(api_manager, MANAGER_INVITE_CODE)
+    return _register_and_authenticate(api_manager, INVITE_CODE_MANAGER)
 
 
 @pytest.fixture(scope="session")
 def admin_manager():
-    manager, session = _manager_with_role(ADMIN_INVITE_CODE)
+    manager, session = _manager_with_role(INVITE_CODE_ADMIN)
     yield manager
     session.close()
 
 
 @pytest.fixture
 def authenticated_admin(api_manager):
-    return _register_and_authenticate(api_manager, ADMIN_INVITE_CODE)
+    return _register_and_authenticate(api_manager, INVITE_CODE_ADMIN)
 
 
 @pytest.fixture(scope="session")
@@ -116,12 +117,24 @@ def out_of_stock_product(admin_manager, category_id):
 
 
 def pytest_collection_modifyitems(items):
-    if ADMIN_INVITE_CODE and MANAGER_INVITE_CODE:
+    missing_admin = not INVITE_CODE_ADMIN
+    missing_manager = not INVITE_CODE_MANAGER
+
+    if not missing_admin and not missing_manager:
         return
-    skip_admin = pytest.mark.skip(reason="в .env нет ADMIN_INVITE_CODE")
+
+    skip_admin = pytest.mark.skip(reason="в .env нет INVITE_CODE_ADMIN")
+    skip_manager = pytest.mark.skip(reason="в .env нет INVITE_CODE_MANAGER")
+
     for item in items:
-        if "admin_manager" in item.fixturenames:
+        if missing_admin and "admin_manager" in item.fixturenames:
             item.add_marker(skip_admin)
+
+        elif missing_manager and any(
+            fixture in item.fixturenames
+            for fixture in ("store_manager", "authenticated_manager")
+        ):
+            item.add_marker(skip_manager)
 
 
 @pytest.fixture(scope="session")
@@ -191,7 +204,7 @@ def _manager_with_role(invite_code):
 
 @pytest.fixture
 def store_manager():
-    manager, session = _manager_with_role(MANAGER_INVITE_CODE)
+    manager, session = _manager_with_role(INVITE_CODE_MANAGER)
     yield manager
     session.close()
 
@@ -219,7 +232,7 @@ def awaiting_order(
 
     api_manager.payment_api.cancel_order(
         order.id,
-        expected_status=[200, 404, 409],
+        expected_status=[200, 409],
     )
 
 
@@ -299,3 +312,12 @@ def pytest_runtest_makereport(item, call):
     allure.attach(
         page.url, name="Адрес страницы", attachment_type=allure.attachment_type.TEXT
     )
+
+
+@pytest.fixture
+def product_in_cart(logged_in_page, created_product):
+    catalog_page = CatalogPage(logged_in_page).open()
+    catalog_page.search(created_product.name)
+    catalog_page.add_to_cart(created_product.name)
+    expect(catalog_page.header.cart_count).to_have_text("1")
+    return catalog_page

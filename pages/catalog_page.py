@@ -1,3 +1,6 @@
+import re
+from decimal import Decimal
+
 import allure
 
 from pages.base_page import BasePage
@@ -51,7 +54,25 @@ class CatalogPage(BasePage):
         self.card(name).get_by_test_id("product-name").click()
 
     def prices(self):
-        return [
-            float(text.replace("₽", "").replace("\xa0", "").replace(" ", ""))
-            for text in self.cards.get_by_test_id("product-price").all_inner_texts()
-        ]
+        texts = self.cards.get_by_test_id("product-price").all_inner_texts()
+        return [Decimal(re.sub(r"[^\d.]", "", text)) for text in texts]
+
+    @property
+    def selected_category(self):
+        return self.category_select.locator("option:checked")
+
+    @property
+    def selected_sort(self):
+        return self.sort_select.locator("option:checked")
+
+    @property
+    def selected_order(self):
+        return self.order_select.locator("option:checked")
+
+    @allure.step("Тапаем по кнопке «В корзину»")
+    def tap_add_to_cart(self):
+        self.cards.first.get_by_test_id("add-to-cart").tap()
+
+    @allure.step("Переходим на следующую страницу")
+    def go_to_next_page(self):
+        self.next_page_button.click()

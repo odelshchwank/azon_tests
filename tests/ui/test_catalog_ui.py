@@ -1,5 +1,5 @@
 import re
-from decimal import Decimal
+import uuid
 
 import allure
 import pytest
@@ -10,15 +10,12 @@ from pages.catalog_page import CatalogPage
 pytestmark = [pytest.mark.ui, pytest.mark.products]
 
 
-def parse_price(text: str) -> Decimal:
-    return Decimal(re.sub(r"[^\d.]", "", text))
-
-
 @allure.epic("Витрина AZON")
 @allure.feature("Каталог")
 class TestCatalogUI:
     @allure.story("Отображение каталога")
     @allure.title("Каталог показывает товары и счётчик")
+    @allure.severity(allure.severity_level.BLOCKER)
     def test_catalog_shows_products(self, page):
         catalog_page = CatalogPage(page).open()
 
@@ -28,56 +25,59 @@ class TestCatalogUI:
 
     @allure.story("Поиск товара")
     @allure.title("Поиск несуществующего товара показывает заглушку")
+    @allure.severity(allure.severity_level.MINOR)
     @pytest.mark.negative
     def test_search_without_results_shows_empty_state(self, page):
         catalog_page = CatalogPage(page).open()
-        catalog_page.search("хуерга плотная")
+        catalog_page.search(str(uuid.uuid4()))
 
         expect(catalog_page.empty).to_be_visible()
         expect(catalog_page.cards).to_have_count(0)
 
     @allure.story("Фильтр по категории")
-    @allure.title("Фильтр «Книги» сужает выдачу")
-    def test_category_filter_narrows_catalog(self, page):
+    @allure.title("Фильтр «Дом и кухня» сужает выдачу")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_category_filter_narrows_catalog(self, page, api_manager, created_product):
         catalog_page = CatalogPage(page).open()
-        all_products = catalog_page.total.inner_text()
 
-        catalog_page.choose_category("Книги")
-
-        expect(catalog_page.category_select.locator("option:checked")).to_have_text(
-            "Книги"
+        categories = api_manager.categories_api.get_categories().json()
+        my_category = next(
+            c for c in categories if c["id"] == str(created_product.category_id)
         )
-        expect(catalog_page.total).not_to_have_text(all_products)
+        category_name = my_category["name"]
+
+        all_products = int(re.sub(r"\D", "", catalog_page.total.inner_text()))
+
+        catalog_page.choose_category(category_name)
+        expect(catalog_page.selected_category).to_have_text(category_name)
+
+        filtered_products = int(re.sub(r"\D", "", catalog_page.total.inner_text()))
+        assert filtered_products < all_products, "Фильтр не сузил выдачу"
+
+        expect(catalog_page.card(created_product.name)).to_be_visible()
 
     @allure.story("Сортировка")
     @allure.title("Сортировка по цене по возрастанию")
+    @allure.severity(allure.severity_level.NORMAL)
     def test_sort_catalog_by_price_ascending(self, page):
         catalog_page = CatalogPage(page).open()
         catalog_page.sort_by("По цене", order="По возрастанию")
 
-        expect(catalog_page.sort_select.locator("option:checked")).to_have_text(
-            "По цене"
-        )
-        expect(catalog_page.order_select.locator("option:checked")).to_have_text(
-            "По возрастанию"
-        )
+        expect(catalog_page.selected_sort).to_have_text("По цене")
+        expect(catalog_page.selected_order).to_have_text("По возрастанию")
 
-        prices = [
-            parse_price(t)
-            for t in catalog_page.cards.get_by_test_id(
-                "product-price"
-            ).all_inner_texts()
-        ]
+        prices = catalog_page.prices()
         assert prices == sorted(prices), f"Цены не по возрастанию: {prices}"
 
     @allure.story("Пагинация")
     @allure.title("Кнопка «Вперёд» открывает вторую страницу")
+    @allure.severity(allure.severity_level.NORMAL)
     def test_catalog_pagination_moves_to_second_page(self, page):
         catalog_page = CatalogPage(page).open()
 
         first_page_ids = catalog_page.cards.all_inner_texts()
 
-        catalog_page.next_page_button.click()
+        catalog_page.go_to_next_page()
 
         expect(page).to_have_url(re.compile(r"[?&]page=2(&|$)"))
         expect(catalog_page.cards.first).to_be_visible()
@@ -89,6 +89,7 @@ class TestCatalogUI:
 
     @allure.story("Гость и корзина")
     @allure.title("Гость, нажавший «В корзину», попадает на /login")
+    @allure.severity(allure.severity_level.CRITICAL)
     def test_guest_add_to_cart_goes_to_login(self, page, created_product):
         catalog_page = CatalogPage(page).open()
         catalog_page.search(created_product.name)
@@ -98,6 +99,7 @@ class TestCatalogUI:
 
     @allure.story("Поиск товара")
     @allure.title("Поиск находит товар из фикстуры")
+    @allure.severity(allure.severity_level.CRITICAL)
     def test_search_finds_created_product(self, page, created_product):
         catalog_page = CatalogPage(page).open()
         catalog_page.search(created_product.name)

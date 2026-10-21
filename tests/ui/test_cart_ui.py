@@ -14,15 +14,10 @@ class TestCartUI:
     @allure.story("Добавление товара")
     @allure.title("Кнопка «В корзину» добавляет товар в корзину")
     @allure.severity(allure.severity_level.CRITICAL)
-    def test_cart_shows_added_product(self, logged_in_page, created_product):
-        catalog_page = CatalogPage(logged_in_page).open()
-        catalog_page.search(created_product.name)
-        catalog_page.add_to_cart(created_product.name)
-        expect(catalog_page.header.cart_count).to_have_text("1")
+    def test_cart_shows_added_product(self, created_product, product_in_cart):
+        product_in_cart.header.go_to_cart()
 
-        catalog_page.header.go_to_cart()
-
-        cart_page = CartPage(logged_in_page)
+        cart_page = CartPage(product_in_cart.page)
         expect(cart_page.items).to_have_count(1)
         expect(cart_page.item(created_product.name)).to_be_visible()
 
@@ -42,35 +37,30 @@ class TestCartUI:
 
     @allure.story("Бейдж корзины")
     @allure.title("У пользователя с пустой корзиной бейдж показывает 0")
+    @allure.severity(allure.severity_level.NORMAL)
     def test_cart_badge_shows_zero(self, logged_in_page):
         CatalogPage(logged_in_page).open()
         expect(CatalogPage(logged_in_page).header.cart_count).to_have_text("0")
 
     @allure.story("Содержимое корзины")
     @allure.title("Смена количества пересчитывает итог")
+    @allure.severity(allure.severity_level.CRITICAL)
     def test_quantity_change_updates_total(
         self,
-        logged_in_page,
         created_product,
+        product_in_cart,
     ):
-        catalog_page = CatalogPage(logged_in_page).open()
-        catalog_page.search(created_product.name)
-        catalog_page.add_to_cart(created_product.name)
-        expect(catalog_page.header.cart_count).to_have_text("1")
+        product_in_cart.header.go_to_cart()
 
-        catalog_page.header.go_to_cart()
-
-        cart_page = CartPage(logged_in_page)
-        one_item_total = cart_page.total.inner_text()
+        cart_page = CartPage(product_in_cart.page)
 
         cart_page.set_quantity(created_product.name, 3)
 
-        expect(
-            cart_page.item(
-                created_product.name,
-            ).get_by_test_id("cart-item-quantity")
-        ).to_have_value("3")
-        expect(cart_page.total).not_to_have_text(one_item_total)
+        expect(cart_page.quantity_input(created_product.name)).to_have_value("3")
+
+        expected_price = created_product.price * 3
+        assert cart_page.item_subtotal(created_product.name) == expected_price
+        assert cart_page.total_amount() == expected_price
 
     @allure.story("Содержимое корзины")
     @allure.title("Пустая корзина показывает заглушку")
@@ -82,16 +72,12 @@ class TestCartUI:
         expect(cart_page.checkout_button).to_have_count(0)
 
     @allure.story("Удаление товара")
-    @allure.title("Кнопка «Очистить корзину» очищает корзину и показывает заглушку")
-    @allure.severity(allure.severity_level.CRITICAL)
-    def test_remove_item_empties_cart(self, logged_in_page, created_product):
-        catalog_page = CatalogPage(logged_in_page).open()
-        catalog_page.search(created_product.name)
-        catalog_page.add_to_cart(created_product.name)
-        expect(catalog_page.header.cart_count).to_have_text("1")
+    @allure.title("Удаление товара из строки очищает корзину и показывает заглушку")
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_remove_item_empties_cart(self, created_product, product_in_cart):
+        product_in_cart.header.go_to_cart()
 
-        catalog_page.header.go_to_cart()
-        cart_page = CartPage(logged_in_page)
+        cart_page = CartPage(product_in_cart.page)
 
         cart_page.remove(created_product.name)
 

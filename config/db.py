@@ -5,7 +5,7 @@ from psycopg.conninfo import make_conninfo
 
 load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST", "db.azon.130-17-2-196.sslip.io")
+DB_HOST = os.getenv("DB_HOST", "db.azon.130-17-2-195.sslip.io")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_USER = os.getenv("DB_USER", "student")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")

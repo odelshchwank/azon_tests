@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from data.orders import OrderData, Cards
+from data.orders import Cards, OrderData
 from data.products import ProductData
 from utils.marks import requires_admin, requires_db
 
@@ -60,7 +60,20 @@ class TestOrdersInDB:
         assert payment["status"] == "DECLINED"
         assert payment["decline_code"] == "card_declined"
         assert payment["card_last4"] == Cards.DECLINED[-4:]
-        assert len(payment["card_last4"]) == 4
+
+        full_payment_row = db.payment.fetch_one(
+            "SELECT * FROM payments WHERE id = %s", (payment["id"],)
+        )
+
+        row = str(full_payment_row.values())
+        assert Cards.DECLINED not in row, (
+            "В базе найден полный номер карты! Храниться должны только последние 4 цифры"
+        )
 
         transactions = db.payment.get_transactions_by_payment(payment["id"])
-        assert any(transaction["status"] == "FAILED" for transaction in transactions)
+
+        assert len(transactions) == 1
+
+        transaction = transactions[0]
+        assert transaction["type"] == "CHARGE"
+        assert transaction["status"] == "FAILED"

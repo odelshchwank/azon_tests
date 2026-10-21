@@ -6,10 +6,10 @@ import pytest
 import requests
 
 from api.reviews_api import ReviewAPI
-from config.hosts import PRODUCT_URL, MOCK_URL
+from config.hosts import MOCK_URL, PRODUCT_URL
 from data.reviews import ReviewData
 from mocks.helpers import fake_response
-from mocks.stubs import PRODUCT_ID, ReviewStubs, JSON_HEADERS
+from mocks.stubs import JSON_HEADERS, PRODUCT_ID, ReviewStubs
 from models.reviews import ReviewsPage
 
 pytestmark = [pytest.mark.mock, pytest.mark.reviews]

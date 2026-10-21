@@ -21,10 +21,6 @@ class Header:
     def go_to_cart(self):
         self.cart_link.click()
 
-    @allure.step("Переходим на страницу заказов")
-    def go_to_orders(self):
-        self.orders_link.click()
-
     @allure.step("Переходим в каталог")
     def go_to_catalog(self):
         self.catalog_link.click()

@@ -14,12 +14,12 @@ class ReviewCreateRequest(BaseModel):
 
 
 class ReviewUpdateRequest(BaseModel):
-    """Тело POST api/v1/reviews/{review_id}"""
+    """Тело PATCH api/v1/reviews/{review_id}"""
 
     model_config = ConfigDict(extra="forbid")
 
-    rating: int | None = Field(ge=1, le=5)
-    text: str | None = Field(min_length=1, max_length=2000)
+    rating: int | None = Field(None, ge=1, le=5)
+    text: str | None = Field(None, min_length=1, max_length=2000)
 
 
 class ReviewResponse(BaseModel):

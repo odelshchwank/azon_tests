@@ -1,16 +1,16 @@
 import pytest
 
-from config.credentials import ADMIN_INVITE_CODE, MANAGER_INVITE_CODE
+from config.credentials import INVITE_CODE_ADMIN, INVITE_CODE_MANAGER
 from config.db import DB_PASSWORD
 
 requires_admin = pytest.mark.skipif(
-    not ADMIN_INVITE_CODE,
-    reason="в .env нет ADMIN_INVITE_CODE - админские тесты пропускаем",
+    not INVITE_CODE_ADMIN,
+    reason="в .env нет INVITE_ADMIN_CODE - админские тесты пропускаем",
 )
 
 requires_manager = pytest.mark.skipif(
-    not MANAGER_INVITE_CODE,
-    reason="в .env нет ADMIN_INVITE_CODE - тесты роли MANAGER пропускаем",
+    not INVITE_CODE_MANAGER,
+    reason="в .env нет INVITE_MANAGER_CODE - тесты роли MANAGER пропускаем",
 )
 
 requires_db = pytest.mark.skipif(

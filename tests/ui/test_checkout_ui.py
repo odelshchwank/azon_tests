@@ -2,21 +2,11 @@ import allure
 import pytest
 from playwright.sync_api import expect
 
+from data.orders import Cards
 from pages.cart_page import CartPage
-from pages.catalog_page import CatalogPage
 from pages.order_page import OrderPage
-from pages.orders_page import OrdersPage
 
-pytestmark = [pytest.mark.ui, pytest.mark.payment]
-
-DECLINED_CARD = "4000000000000002"
-
-
-def put_product_in_cart(page, product):
-    catalog_page = CatalogPage(page).open()
-    catalog_page.search(product.name)
-    catalog_page.add_to_cart(product.name)
-    expect(catalog_page.header.cart_count).to_have_text("1")
+pytestmark = [pytest.mark.ui, pytest.mark.payment_ui]
 
 
 @allure.epic("Витрина AZON")
@@ -24,10 +14,12 @@ def put_product_in_cart(page, product):
 class TestCheckoutUI:
     @allure.story("Успешная оплата")
     @allure.title("Оплата успешной картой переводит заказ в PAID")
-    def test_successful_payment_marks_order_paid(self, logged_in_page, created_product):
-        put_product_in_cart(logged_in_page, created_product)
-        CartPage(logged_in_page).open().checkout()
-        order_page = OrderPage(logged_in_page)
+    @allure.severity(allure.severity_level.BLOCKER)
+    def test_successful_payment_marks_order_paid(
+        self, created_product, product_in_cart
+    ):
+        CartPage(product_in_cart.page).open().checkout()
+        order_page = OrderPage(product_in_cart.page)
 
         order_page.pay()
 
@@ -37,31 +29,29 @@ class TestCheckoutUI:
 
     @allure.story("Отказ банка")
     @allure.title("Отклонённая карта оставляет заказ неоплаченным")
-    def test_declined_card_leaves_order_unpaid(self, logged_in_page, created_product):
-        put_product_in_cart(logged_in_page, created_product)
-        CartPage(logged_in_page).open().checkout()
-        order_page = OrderPage(logged_in_page)
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_declined_card_leaves_order_unpaid(self, created_product, product_in_cart):
+        CartPage(product_in_cart.page).open().checkout()
+        order_page = OrderPage(product_in_cart.page)
 
-        order_page.pay(card_number=DECLINED_CARD)
+        order_page.pay(card_number=Cards.DECLINED)
 
         expect(order_page.flash).to_have_text("Платёж отклонён банком (card_declined)")
         expect(order_page.status).to_have_text("AWAITING_PAYMENT")
-        expect(
-            order_page.payments.filter(has_text="DECLINED").get_by_test_id(
-                "payment-decline-code"
-            )
-        ).to_have_text("card_declined")
+        expect(order_page.get_decline_code_for_declined_payment()).to_have_text(
+            "card_declined"
+        )
 
     @allure.story("История платежей")
     @allure.title("История хранит и DECLINED, и SUCCEEDED")
+    @allure.severity(allure.severity_level.CRITICAL)
     def test_payment_history_keeps_declined_and_successful_attempts(
-        self, logged_in_page, created_product
+        self, created_product, product_in_cart
     ):
-        put_product_in_cart(logged_in_page, created_product)
-        CartPage(logged_in_page).open().checkout()
-        order_page = OrderPage(logged_in_page)
+        CartPage(product_in_cart.page).open().checkout()
+        order_page = OrderPage(product_in_cart.page)
 
-        order_page.pay(card_number=DECLINED_CARD)
+        order_page.pay(card_number=Cards.DECLINED)
         expect(order_page.status).to_have_text("AWAITING_PAYMENT")
 
         order_page.pay()
@@ -69,20 +59,18 @@ class TestCheckoutUI:
 
         expect(order_page.payments).to_have_count(2)
 
-        declined_row = order_page.payments.filter(has_text="DECLINED")
-        expect(declined_row).to_have_count(1)
-        expect(declined_row.get_by_test_id("payment-decline-code")).to_have_text(
+        expect(order_page.get_decline_code_for_declined_payment()).to_have_text(
             "card_declined"
         )
 
-        expect(order_page.payments.filter(has_text="SUCCEEDED")).to_have_count(1)
+        expect(order_page.get_succeeded_payment()).to_have_count(1)
 
     @allure.story("Отмена заказа")
     @allure.title("Неоплаченный заказ можно отменить")
-    def test_order_can_be_cancelled(self, logged_in_page, created_product):
-        put_product_in_cart(logged_in_page, created_product)
-        CartPage(logged_in_page).open().checkout()
-        order_page = OrderPage(logged_in_page)
+    @allure.severity(allure.severity_level.NORMAL)
+    def test_order_can_be_cancelled(self, created_product, product_in_cart):
+        CartPage(product_in_cart.page).open().checkout()
+        order_page = OrderPage(product_in_cart.page)
 
         order_page.cancel()
 

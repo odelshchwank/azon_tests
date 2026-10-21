@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import allure
 
 from pages.base_page import BasePage
@@ -26,10 +28,6 @@ class CartPage(BasePage):
         row.get_by_test_id("cart-item-quantity").fill(str(quantity))
         row.get_by_test_id("cart-item-update").click()
 
-    @allure.step("Очищаем корзину")
-    def clear(self):
-        self.clear_button.click()
-
     @allure.step("Оформляем заказ")
     def checkout(self):
         self.checkout_button.click()
@@ -37,3 +35,16 @@ class CartPage(BasePage):
     @allure.step("Удаляем {name} из корзины")
     def remove(self, name):
         self.item(name).get_by_test_id("cart-item-remove").click()
+
+    @allure.step("Получаем поле количества «{name}»")
+    def quantity_input(self, name):
+        return self.item(name).get_by_test_id("cart-item-quantity")
+
+    @allure.step("Получаем сумму строки «{name}» в виде Decimal")
+    def item_subtotal(self, name) -> Decimal:
+        text = self.item(name).get_by_test_id("cart-item-subtotal").inner_text()
+        return self.parse_price_text(text)
+
+    @allure.step("Получаем общий итог корзины в виде Decimal")
+    def total_amount(self) -> Decimal:
+        return self.parse_price_text(self.total.inner_text())
