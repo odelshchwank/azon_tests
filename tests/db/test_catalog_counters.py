@@ -1,0 +1,23 @@
+import pytest
+
+from data.products import ProductData
+from utils.marks import requires_admin, requires_db
+
+pytestmark = [pytest.mark.db, pytest.mark.products, requires_admin, requires_db]
+
+
+def test_new_product_increases_category_counter(admin_manager, category_id, db):
+    before = db.product.count_active_products(category_id)
+
+    product = admin_manager.products_api.create_product(
+        ProductData.creation_product_data(category_id)
+    ).json()
+
+    try:
+        assert db.product.count_active_products(category_id) == before + 1
+    finally:
+        admin_manager.products_api.delete_product(
+            product["id"], expected_status=[204, 404]
+        )
+
+    assert db.product.count_active_products(category_id) == before
