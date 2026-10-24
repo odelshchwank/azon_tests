@@ -21,10 +21,11 @@ def test_duplicate_review_does_not_create_second_row(
     created_product,
     db,
 ):
-    api_manager.review_api.create_review(
+    response = api_manager.review_api.create_review(
         created_product.id, ReviewData.creation_review_data(), expected_status=409
     )
 
+    assert response.json()["error"]["code"] == "REVIEW_EXISTS"
     assert db.product.count_reviews(created_product.id) == 1
 
 

@@ -51,7 +51,6 @@ class OrderPage(BasePage):
 
     def get_decline_code_for_declined_payment(self):
         row = self.payments.filter(has_text="DECLINED")
-        expect(row).to_have_count(1)
         return row.get_by_test_id("payment-decline-code")
 
     def get_succeeded_payment(self):

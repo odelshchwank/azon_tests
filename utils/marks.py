@@ -5,12 +5,12 @@ from config.db import DB_PASSWORD
 
 requires_admin = pytest.mark.skipif(
     not INVITE_CODE_ADMIN,
-    reason="в .env нет INVITE_ADMIN_CODE - админские тесты пропускаем",
+    reason="в .env нет INVITE_CODE_ADMIN - админские тесты пропускаем",
 )
 
 requires_manager = pytest.mark.skipif(
     not INVITE_CODE_MANAGER,
-    reason="в .env нет INVITE_MANAGER_CODE - тесты роли MANAGER пропускаем",
+    reason="в .env нет INVITE_CODE_MANAGER - тесты роли MANAGER пропускаем",
 )
 
 requires_db = pytest.mark.skipif(
