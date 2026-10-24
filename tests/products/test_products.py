@@ -237,9 +237,9 @@ class TestProducts:
                 created["id"], expected_status=[204, 404]
             )
 
-    @pytest.mark.unstable
     @pytest.mark.xfail(
-        reason="AZON-142: фильтр in_stock=false не отбирает товары без остатка"
+        reason="AZON-142: фильтр in_stock=false не отбирает товары без остатка",
+        raises=AssertionError,
     )
     def test_filter_out_of_stock(self, api_manager):
         response = api_manager.products_api.get_products(

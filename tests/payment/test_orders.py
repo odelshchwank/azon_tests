@@ -2,7 +2,7 @@ import pytest
 
 from data.orders import Cards, OrderData
 from models.orders import (
-    OrderResponse,
+    OrderWithPaymentsResponse,
     PaymentBriefResponse,
     PayResponse,
 )
@@ -25,10 +25,15 @@ class TestOrdersPositive:
         assert body.status == "SUCCEEDED"
         assert body.order_status == "PAID"
 
-        order = OrderResponse.model_validate(
+        order = OrderWithPaymentsResponse.model_validate(
             api_manager.payment_api.get_order(awaiting_order.id).json()
         )
         assert order.status == "PAID"
+
+        assert len(order.payments) == 1
+        payment = order.payments[0]
+        assert payment.status == "SUCCEEDED"
+        assert payment.card_last4 == "4242"
 
     def test_payment_history_shows_declined_and_succeeded(
         self,
@@ -88,7 +93,7 @@ class TestOrdersNegative:
             OrderData.payment_declined(),
             expected_status=402,
         )
-        order = OrderResponse.model_validate(
+        order = OrderWithPaymentsResponse.model_validate(
             api_manager.payment_api.get_order(awaiting_order.id).json()
         )
         assert order.status == "AWAITING_PAYMENT"

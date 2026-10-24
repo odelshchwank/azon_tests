@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from data.reviews import ReviewData
-from models.reviews import StrictReviewResponse, ReviewsPage
+from models.reviews import ReviewsPage, StrictReviewResponse
 from utils.marks import requires_admin
 
 pytestmark = [pytest.mark.reviews, pytest.mark.contract, requires_admin]

@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from mocks.stubs import product_body, ProductStubs, PRODUCTS_ENDPOINT
+from mocks.stubs import PRODUCTS_ENDPOINT, ProductStubs, product_body
 from models.products import ProductResponse
 
 pytestmark = [pytest.mark.mock, pytest.mark.products]

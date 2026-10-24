@@ -51,7 +51,7 @@ def token_body(access_token=MOCK_TOKEN):
     return {
         "access_token": access_token,
         "refresh_token": "mock-refresh-token",
-        "token-type": "bearer",
+        "token_type": "bearer",
         "expires_in": 43200,
     }
 

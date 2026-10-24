@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 import requests.exceptions
 
@@ -10,12 +12,12 @@ pytestmark = [pytest.mark.mock, pytest.mark.payment]
 def test_slow_payment_hits_read_timeout(
     wiremock,
     mock_payment_api,
-    awaiting_order,
 ):
-    wiremock.add_stub(PaymentStubs.slow_payment(awaiting_order.id))
+    order_id = str(uuid.uuid4())
+    wiremock.add_stub(PaymentStubs.slow_payment(order_id))
     with pytest.raises(requests.exceptions.ReadTimeout):
         mock_payment_api.pay_order(
-            awaiting_order.id,
+            order_id,
             OrderData.payment_slow(),
             timeout=1,
         )

@@ -1,11 +1,8 @@
 import allure
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
+from data.orders import Cards
 from pages.base_page import BasePage
-
-SUCCESS_CARD = "4242424242424242"
-DECLINED_CARD = "4000000000000002"
-PROCESSING_CARD = "4000000000003220"
 
 
 class OrderPage(BasePage):
@@ -32,15 +29,10 @@ class OrderPage(BasePage):
         self.decline_code = page.get_by_test_id("payment-decline-code")
         self.cancel_button = page.get_by_test_id("cancel-order-button")
 
-    @allure.step("Открываем страницу заказа по его id: {order_id}")
-    def open_by_id(self, order_id):
-        self.url = f"/orders/{order_id}"
-        return self.open()
-
     @allure.step("Оплачиваем заказ картой {card_number}")
     def pay(
         self,
-        card_number=SUCCESS_CARD,
+        card_number=Cards.SUCCESS,
         holder="TEST STUDENT",
         month="12",
         year="2030",
@@ -56,3 +48,10 @@ class OrderPage(BasePage):
     @allure.step("Отменяем заказ")
     def cancel(self):
         self.cancel_button.click()
+
+    def get_decline_code_for_declined_payment(self):
+        row = self.payments.filter(has_text="DECLINED")
+        return row.get_by_test_id("payment-decline-code")
+
+    def get_succeeded_payment(self):
+        return self.payments.filter(has_text="SUCCEEDED")

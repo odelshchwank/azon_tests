@@ -1,4 +1,4 @@
-from config.db import conninfo, AUTH_DB, PRODUCT_DB, PAYMENT_DB
+from config.db import AUTH_DB, PAYMENT_DB, PRODUCT_DB, conninfo
 from db.auth_db import AuthDB
 from db.payment_db import PaymentDB
 from db.product_db import ProductDB
